@@ -6,9 +6,9 @@ const User = require("../entity/User");
 class userController {
   async createUser(req, res) {
     try {
-      const { name, surname, email, cpf, number, password } = req.body;
+      const { name, surname, email, cpf, number, password, gender } = req.body;
 
-      if (!(email||cpf) || !password) {
+      if (!(email || cpf) || !password) {
         return res.status(400).json({
           success: false,
           message: "Campos obrigatórios não fornecidos",
@@ -29,12 +29,22 @@ class userController {
       const completeName = `${name} ${surname}`;
       const senhaCriptografada = await bcrypt.hash(password, 10);
 
+      let profileImage
+
+      if (req.file) {
+        profileImage = req.file.filename; 
+      } else {
+        profileImage = null; 
+      }
+
       const newUser = userRepository.create({
         name: completeName,
         email,
         cpf,
         number,
         password: senhaCriptografada,
+        gender,
+        profileImage
       });
 
       await userRepository.save(newUser);
