@@ -3,11 +3,11 @@ const userController = require("../controllers/authController");
 const express = require("express");
 const { verifyToken } = require("../middlewares/authJWT");
 const router = express.Router();
+const upload = require('../middlewares/upload');
 
 router.post("/login",userController.loginUser);
 
-router.post("/register",userController.createUser)
-
+router.post("/register", upload.single('profileImage'), userController.createUser);
 
 router.get("/perfil", verifyToken, (req, res) => {
   res.status(200).json({
