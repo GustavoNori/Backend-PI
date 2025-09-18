@@ -9,6 +9,8 @@ router.post("/login",userController.loginUser);
 
 router.post("/register", upload.single('profileImage'), userController.createUser);
 
+router.put("/atualizarUser/:id", userController.updateUser);
+
 router.get("/perfil", verifyToken, (req, res) => {
   res.status(200).json({
     success: true,

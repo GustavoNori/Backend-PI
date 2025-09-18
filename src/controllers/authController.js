@@ -52,6 +52,7 @@ class userController {
       return res.status(201).json({
         success: true,
         message: "Usuário cadastrado com sucesso!",
+        data: newUser
       });
     } catch (error) {
       res.status(500).json({
@@ -77,7 +78,6 @@ class userController {
       const userRepository = AppDataSource.getRepository("User");
       let user;
 
-      // Se contém "@" é um e-mail, senão tenta como CPF
       if (identificator.includes("@")) {
         user = await userRepository.findOneBy({ email: identificator });
       } else {
@@ -111,6 +111,41 @@ class userController {
         message: "Erro interno no servidor",
         error: error.message,
       });
+    }
+  }
+  async updateUser(req,res){
+      const {id} = req.params
+      const { name, surname, email, cpf, number, password, gender } = req.body;
+    try {
+
+      const userRepository = AppDataSource.getRepository(User)
+      const user = await userRepository.findOne({
+        where: {id: parseInt(id)}
+      })
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "Usuario não encontrado"
+        })
+      }
+      if (name) user.name = name
+      if (surname) user.surname = surname
+      if (email) user.email = email
+      if (cpf) user.cpf = cpf
+      if (number) user.number = number
+      if (gender) user.gender = gender
+
+      await res.status(200).json({
+        success: true,
+        message: "Usuario atualizado com sucesso",
+        data: user
+      })
+    }
+    catch (error){
+      return res.status(500).json({
+        success: false,
+        message: error.message
+      })
     }
   }
 }

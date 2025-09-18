@@ -130,7 +130,7 @@ class PostController {
     const post = await jobRepository.findOne({
       where: { id: parseInt(id) },
       relations: ["user"] 
-    });
+    });   
 
     if (!post) {
       return res.status(404).json({

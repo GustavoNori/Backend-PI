@@ -60,7 +60,6 @@ class RatingController {
 
             const result = await ratingRepository.createQueryBuilder("avaliacao")
                 .select("AVG(avaliacao.nota)", "averageRating")
-                // CORREÇÃO: Alterado de 'avaliadoId' para 'avaliado_id' para corresponder ao nome da coluna no banco de dados.
                 .where("avaliacao.avaliado_id = :id", { id: parseInt(userId) })
                 .getRawOne();
 
