@@ -1,4 +1,4 @@
-const { AppDataSource } = require("../config/db")
+const { AppDataSource } = require("../config/db");
 const bcrypt = require("bcrypt");
 const { generateToken } = require("../middlewares/authJWT");
 const User = require("../entity/User");
@@ -17,7 +17,6 @@ class userController {
 
       const userRepository = AppDataSource.getRepository(User);
 
-
       const existingUser = await userRepository.findOneBy({ email });
       if (existingUser) {
         return res.status(409).json({
@@ -29,12 +28,12 @@ class userController {
       const completeName = `${name} ${surname}`;
       const senhaCriptografada = await bcrypt.hash(password, 10);
 
-      let profileImage
+      let profileImage;
 
       if (req.file) {
-        profileImage = req.file.filename; 
+        profileImage = req.file.filename;
       } else {
-        profileImage = null; 
+        profileImage = null;
       }
 
       const newUser = userRepository.create({
@@ -44,7 +43,7 @@ class userController {
         number,
         password: senhaCriptografada,
         gender,
-        profileImage
+        profileImage,
       });
 
       await userRepository.save(newUser);
@@ -52,7 +51,7 @@ class userController {
       return res.status(201).json({
         success: true,
         message: "Usuário cadastrado com sucesso!",
-        data: newUser
+        data: newUser,
       });
     } catch (error) {
       res.status(500).json({
@@ -66,7 +65,6 @@ class userController {
   async loginUser(req, res) {
     try {
       const { identificator, password } = req.body;
-
 
       if (!identificator || !password) {
         return res.status(400).json({
@@ -113,39 +111,71 @@ class userController {
       });
     }
   }
-  async updateUser(req,res){
-      const {id} = req.params
-      const { name, surname, email, cpf, number, password, gender } = req.body;
+  async updateUser(req, res) {
+    const { id } = req.params;
+    const { name, surname, email, cpf, number, password, gender } = req.body;
     try {
-
-      const userRepository = AppDataSource.getRepository(User)
+      const userRepository = AppDataSource.getRepository(User);
       const user = await userRepository.findOne({
-        where: {id: parseInt(id)}
-      })
+        where: { id: parseInt(id) },
+      });
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: "Usuario não encontrado"
-        })
+          message: "Usuario não encontrado",
+        });
       }
-      if (name) user.name = name
-      if (surname) user.surname = surname
-      if (email) user.email = email
-      if (cpf) user.cpf = cpf
-      if (number) user.number = number
-      if (gender) user.gender = gender
+      if (name) user.name = name;
+      if (surname) user.surname = surname;
+      if (email) user.email = email;
+      if (cpf) user.cpf = cpf;
+      if (number) user.number = number;
+      if (gender) user.gender = gender;
 
-      await res.status(200).json({
+      if (req.file) {
+        user.profileImage = req.file.filename;
+      }
+
+      await userRepository.save(user);
+
+      return res.status(200).json({
         success: true,
         message: "Usuario atualizado com sucesso",
-        data: user
-      })
-    }
-    catch (error){
+        data: user,
+      });
+    } catch (error) {
       return res.status(500).json({
         success: false,
-        message: error.message
-      })
+        message: error.message,
+      });
+    }
+  }
+
+  async getUserById(req, res) {
+    try {
+      const { id } = req.params;
+      const userRepository = AppDataSource.getRepository(User);
+
+      const user = await userRepository.findOne({
+        where: { id: parseInt(id) },
+      });
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "Usuario não encontrado",
+        });
+      }
+
+      return res.status(200).json({
+        success: true,
+        data: user,
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: error.message,
+      });
     }
   }
 }
