@@ -15,6 +15,8 @@ router.post(
 
 router.put("/atualizarUser/:id", userController.updateUser);
 
+router.get("/users", userController.getAllUsers);
+
 router.get("/perfil", verifyToken, (req, res) => {
   res.status(200).json({
     success: true,
