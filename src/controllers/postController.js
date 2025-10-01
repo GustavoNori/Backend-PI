@@ -5,35 +5,35 @@ class PostController {
 
   async createPost(req, res) {
     try {
-      const { titulo, descricao, localizacao, requisitos, tipoContrato, salario } = req.body;
+      const { title, description, value, cep, street, district, city, state, number, date, phone, category, payment, urgent } = req.body;
       const userId = req.user.id;
-      console.log('Dados recebidos:', { titulo, descricao, localizacao, requisitos, tipoContrato, salario });
+      console.log('Dados recebidos:', { title, description, value, cep, street, district, city, state, number, date, phone, category, payment, urgent });
 
-      if (!titulo || !descricao) {
+      if (!title || !description) {
         return res.status(400).json({
           success: false,
           message: "Os campos titulo e descricao são obrigatórios"
-        });
-      }
-      
-      const tiposContrato = ["CLT", "PJ", "Freelancer", "Estágio"];
-      if (tipoContrato && !tiposContrato.includes(tipoContrato)) {
-        return res.status(400).json({
-          success: false,
-          message: "Tipo de contrato inválido. Use: CLT, PJ, Freelancer ou Estágio"
         });
       }
 
       const jobRepository = AppDataSource.getRepository(Job);
 
       const newPost = jobRepository.create({
-        titulo,
-        descricao,
-        requisitos: requisitos || null,
-        tipoContrato: tipoContrato || null,
-        salario: salario || null,
-        localizacao: localizacao || null,
-        user: { id: userId }
+          title,
+          description,
+          value,
+          cep,
+          street,
+          district,
+          city,
+          state,
+          number,
+          tags,
+          phone,
+          category,
+          payment,
+         urgent,
+          user: { id: userId } // Associa ao usuário logado
       });
 
       await jobRepository.save(newPost);
@@ -120,55 +120,50 @@ class PostController {
     }
   }
 
- async updatePost(req, res) {
-  try {
-    const { id } = req.params;
-    const userId = req.user.id;  
-    const { titulo, descricao, localizacao, requisitos, tipoContrato, salario } = req.body;
+    async updatePost(req, res) {
+        try {
+            const { id } = req.params;
+            const userId = req.user.id;  
+            const body = req.body;
 
-    const jobRepository = AppDataSource.getRepository(Job);
-    const post = await jobRepository.findOne({
-      where: { id: parseInt(id) },
-      relations: ["user"] 
-    });   
+            const jobRepository = AppDataSource.getRepository(Job);
+            const post = await jobRepository.findOne({
+                where: { id: parseInt(id) },
+                relations: ["user"] 
+            });   
 
-    if (!post) {
-      return res.status(404).json({
-        success: false,
-        message: "Post não encontrado"
-      });
-    }   
+            if (!post) {
+                return res.status(44).json({
+                    success: false,
+                    message: "Post não encontrado"
+                });
+            }   
 
-    if (post.user.id !== userId) {
-      return res.status(403).json({
-        success: false,
-        message: "Você não tem permissão para modificar este post"
-      });
+            if (post.user.id !== userId) {
+                return res.status(403).json({
+                    success: false,
+                    message: "Você não tem permissão para modificar este post"
+                });
+            }
+
+            // MELHORIA: Usa o método 'merge' para uma atualização limpa e escalável
+            jobRepository.merge(post, body);
+
+            await jobRepository.save(post);
+
+            return res.status(200).json({
+                success: true,
+                message: "Post atualizado com sucesso",
+                data: post
+            });
+        } catch (error) {
+            return res.status(500).json({
+                success: false,
+                message: "Erro ao atualizar post",
+                error: error.message
+            });
+        }
     }
-
-    if (titulo) post.titulo = titulo;
-    if (descricao) post.descricao = descricao;
-    if (localizacao !== undefined) post.localizacao = localizacao;
-    if (requisitos !== undefined) post.requisitos = requisitos;
-    if (tipoContrato !== undefined) post.tipoContrato = tipoContrato;
-    if (salario !== undefined) post.salario = salario;
-
-    await jobRepository.save(post);
-
-    return res.status(200).json({
-      success: true,
-      message: "Post atualizado com sucesso",
-      data: post
-    });
-  } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: "Erro ao atualizar post",
-      error: error.message
-    });
-  }
-}
-
 
   async deletePost(req, res) {
     try {

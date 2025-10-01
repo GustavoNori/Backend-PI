@@ -10,7 +10,7 @@ class userController {
 
       if (!(email || cpf) || !password) {
         return res.status(400).json({
-          success: false,
+           success: false,
           message: "Campos obrigatórios não fornecidos",
         });
       }

@@ -5,34 +5,44 @@ module.exports = new EntitySchema({
   tableName: "jobs",
   columns: {
     id: { primary: true, type: "int", generated: true },
-    titulo: { type: "varchar", length: 100 },
-    descricao: { type: "text" },
-    requisitos: { type: "text", nullable: true },
-    localizacao: { type: "varchar", length: 100, nullable: true },
-    tipo_contrato: {
+    title: { type: "varchar", length: 200 },
+    description: { type: "text" },
+    value: { type: "decimal", precision: 10, scale: 2, nullable: true },
+    cep: { type: "varchar", length: 9, nullable: true },
+    street: { type: "varchar", length: 200, nullable: true },
+    district: { type: "varchar", length: 100, nullable: true },
+    city: { type: "varchar", length: 100, nullable: true },
+    state: { type: "varchar", length: 2, nullable: true },
+    number: { type: "varchar", length: 10, nullable: true },
+    date: { type: "date", nullable: true },
+    phone: { type: "varchar", length: 20, nullable: true },
+    category: { type: "varchar", length: 100, nullable: true },
+    payment: {
       type: "enum",
-      enum: ["CLT", "PJ", "Freelancer", "EstÃ¡gio"],
-      nullable: true
+      enum: ["hora", "dia", "servico"],
+      default: "servico",
     },
-    salario: { type: "decimal", precision: 10, scale: 2, nullable: true },
-    data_publicacao: { type: "datetime", default: () => "CURRENT_TIMESTAMP" }
+    urgent: { type: "boolean", default: false },
+
+    created_at: { type: "datetime", default: () => "CURRENT_TIMESTAMP" },
+    updated_at: { type: "datetime", default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" },
   },
   relations: {
     user: {
       type: "many-to-one",
       target: "User",
       inverseSide: "jobs",
-      joinColumn: { name: "user_id" }
+      joinColumn: { name: "user_id" },
     },
     applications: {
       type: "one-to-many",
       target: "Application",
-      inverseSide: "vaga"
+      inverseSide: "vaga",
     },
     avaliacoes: {
       type: "one-to-many",
       target: "Avaliacao",
-      inverseSide: "vaga"
-    }
-  }
+      inverseSide: "vaga",
+    },
+  },
 });
