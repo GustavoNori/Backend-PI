@@ -28,7 +28,6 @@ class PostController {
           city,
           state,
           number,
-          tags,
           phone,
           category,
           payment,
