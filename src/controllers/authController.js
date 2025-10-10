@@ -6,7 +6,7 @@ const User = require("../entity/User");
 class userController {
   async createUser(req, res) {
     try {
-      const { name, surname, email, cpf, number, password, gender } = req.body;
+      const { firstName, lastName, email, cpf, phone, password, gender } = req.body;
 
       if (!(email || cpf) || !password) {
         return res.status(400).json({
@@ -25,7 +25,7 @@ class userController {
         });
       }
 
-      const completeName = `${name} ${surname}`;
+      const completeName = `${firstName} ${lastName}`;
       const senhaCriptografada = await bcrypt.hash(password, 10);
 
       let profileImage;
@@ -40,7 +40,7 @@ class userController {
         name: completeName,
         email,
         cpf,
-        number,
+        phone,
         password: senhaCriptografada,
         gender,
         profileImage,
@@ -48,16 +48,21 @@ class userController {
 
       await userRepository.save(newUser);
 
+     const token = generateToken(newUser);
+
+
       return res.status(201).json({
         success: true,
         message: "Usuário cadastrado com sucesso!",
-        data: newUser,
+        token,
+        user: newUser,
       });
     } catch (error) {
       res.status(500).json({
         success: false,
         message: "Erro interno no servidor",
         error: error.message,
+        
       });
     }
   }
@@ -113,7 +118,7 @@ class userController {
   }
   async updateUser(req, res) {
     const { id } = req.params;
-    const { name, surname, email, cpf, number, password, gender } = req.body;
+    const { firstName, lastName, email, cpf, phone, password, gender } = req.body;
     try {
       const userRepository = AppDataSource.getRepository(User);
       const user = await userRepository.findOne({
@@ -125,11 +130,11 @@ class userController {
           message: "Usuario não encontrado",
         });
       }
-      if (name) user.name = name;
-      if (surname) user.surname = surname;
+      if (firstName) user.name = firstName;
+      if (lastName) user.surname = lastName;
       if (email) user.email = email;
       if (cpf) user.cpf = cpf;
-      if (number) user.number = number;
+      if (phone) user.number = phone;
       if (gender) user.gender = gender;
 
       if (req.file) {

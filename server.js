@@ -1,7 +1,7 @@
 require('dotenv').config();
-require('reflect-metadata'); // Necessário para TypeORM
-const { AppDataSource } = require('./src/config/db'); // Conexão TypeORM
-const cors = require("cors"); // Importação do cors
+require('reflect-metadata'); 
+const { AppDataSource } = require('./src/config/db'); 
+const cors = require("cors"); 
 const express = require("express");
 
 const app = express();

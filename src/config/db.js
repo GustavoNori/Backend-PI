@@ -13,7 +13,7 @@ const AppDataSource = new DataSource({
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
   synchronize: true, // cria tabelas automaticamente com base nas entidades
-  logging: false,
+  logging: true,
   entities: [
     path.join(dirname, '../entity/User.js'),
     path.join(dirname, '../entity/Company.js'),

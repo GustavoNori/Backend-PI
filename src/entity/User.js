@@ -8,10 +8,10 @@ module.exports = new EntitySchema({
     name: { type: "varchar", length: 100 },
     email: { type: "varchar", unique: true },
     cpf: { type: "varchar", length: 14, unique: true },
-    number: {type: "varchar"},
+    phone: {type: "varchar"},
     password: { type: "varchar", length: 255 },
-    profileImage: {type: "varchar"},
-    gender: {type: "varchar"},
+    profileImage: {type: "varchar", nullable: true},
+    gender: {type: "varchar", nullable: true},
     created_at: { type: "datetime", createDate: true },
     updated_at: { type: "datetime", updateDate: true }
   },
