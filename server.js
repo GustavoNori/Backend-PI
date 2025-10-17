@@ -1,32 +1,5 @@
-require('dotenv').config();
-require('reflect-metadata'); 
-const { AppDataSource } = require('./src/config/db'); 
-const cors = require("cors"); 
-const express = require("express");
-
-const app = express();
-
-app.use(cors());
-app.use(express.json()); 
-app.use(express.urlencoded({ extended: true })); 
-
-
-const testRoutes = require("./src/routes/testRoute");
-const authRoute = require("./src/routes/authRoute");
-
-const postRoute = require("./src/routes/postRoute")
-const ratingRoute = require("./src/routes/ratingRoute")
-
-
-app.use("/", testRoutes);
-app.use("/api/auth", authRoute);
-app.use("/api/post", postRoute)
-app.use("/api/ratings",ratingRoute )
-
-
-app.use("/", testRoutes);
-app.use("/api/auth", authRoute);
-app.use("/api/post", postRoute);
+const app = require("./src/app"); // importa apenas o app
+const { AppDataSource } = require("./src/config/db");
 
 AppDataSource.initialize()
   .then(() => {

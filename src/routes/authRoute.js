@@ -7,10 +7,7 @@ const upload = require("../middlewares/upload");
 
 router.post("/login", userController.loginUser);
 
-router.post(
-  "/register",
-  upload.single("profileImage"),
-  userController.createUser
+router.post("/register", upload.single("profileImage"), userController.createUser
 );
 
 router.put("/atualizarUser/:id", userController.updateUser);
