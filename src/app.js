@@ -14,5 +14,6 @@ app.use("/", require("./routes/testRoute"));
 app.use("/api/auth", require("./routes/authRoute"));
 app.use("/api/post", require("./routes/postRoute"));
 app.use("/api/ratings", require("./routes/ratingRoute"));
+app.use("/api/search", require("./routes/searchRoute"))
 
 module.exports = app; // exporta apenas o app, sem iniciar o servidor
