@@ -77,14 +77,14 @@ class PostController {
       const { id } = req.params;
       const jobRepository = AppDataSource.getRepository(Job);
       const post = await jobRepository.findOneBy({ id: parseInt(id) });
-      const userId = req.user.id;  
+      const userId = req.user?.id;  
 
 
       let FromTheUser = false
 
-      if (post.user.id == userId) {
-        FromTheUser = true
-      }
+if (userId && post.userId === userId) { 
+  FromTheUser = true;
+}
 
       if (!post) {
         return res.status(404).json({
