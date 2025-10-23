@@ -76,13 +76,16 @@ class PostController {
     try {
       const { id } = req.params;
       const jobRepository = AppDataSource.getRepository(Job);
-      const post = await jobRepository.findOneBy({ id: parseInt(id) });
+      const post = await jobRepository.findOne({
+      where: { id: parseInt(id) },
+      relations: ['user']
+    });
       const userId = req.user?.id;  
 
 
       let FromTheUser = false
 
-if (userId && post.userId === userId) { 
+if (userId && post.user && parseInt(post.user.id) === parseInt(userId)) { 
   FromTheUser = true;
 }
 
@@ -92,6 +95,11 @@ if (userId && post.userId === userId) {
           message: "Post não encontrado"
         });
       }
+
+    console.log("--- DEBUG DE PERMISSÃO ---");
+    console.log("ID do Usuário Logado (userId):", userId);
+    console.log("ID do Dono do Post (post.user.id):", post.user?.id);
+    console.log("----------------------------");
 
       return res.status(200).json({
         success: true,

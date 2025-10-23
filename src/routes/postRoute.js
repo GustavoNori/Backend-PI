@@ -8,7 +8,7 @@ const postController = new PostController();
 
 router.get('/', postController.getAllPosts.bind(postController));
 router.get('/user/:userId', postController.getUserPosts.bind(postController));
-router.get('/:id', postController.getPostById.bind(postController));
+router.get('/:id', verifyToken, postController.getPostById.bind(postController));
 
 router.post('/', verifyToken, postController.createPost.bind(postController));
 router.put('/:id', verifyToken, isPostOwner, postController.updatePost.bind(postController));
