@@ -1,5 +1,6 @@
 const { AppDataSource } = require("../config/db");
 const Job = require("../entity/Job");
+const isPostOwner = require("../middlewares/postOwner")
 
 class PostController {
 
@@ -31,7 +32,8 @@ class PostController {
           phone,
           category,
           payment,
-         urgent,
+          urgent,
+          date,
           user: { id: userId } // Associa ao usuário logado
       });
 
@@ -75,6 +77,14 @@ class PostController {
       const { id } = req.params;
       const jobRepository = AppDataSource.getRepository(Job);
       const post = await jobRepository.findOneBy({ id: parseInt(id) });
+      const userId = req.user.id;  
+
+
+      let FromTheUser = false
+
+      if (post.user.id == userId) {
+        FromTheUser = true
+      }
 
       if (!post) {
         return res.status(404).json({
@@ -85,7 +95,8 @@ class PostController {
 
       return res.status(200).json({
         success: true,
-        data: post
+        data: post,
+        FromTheUser
       });
     } catch (error) {
       return res.status(500).json({
@@ -145,7 +156,6 @@ class PostController {
                 });
             }
 
-            // MELHORIA: Usa o método 'merge' para uma atualização limpa e escalável
             jobRepository.merge(post, body);
 
             await jobRepository.save(post);
