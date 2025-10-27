@@ -13,7 +13,7 @@ router.post("/register", upload.single("profileImage"), userController.createUse
 
 router.put("/atualizarUser/:id", decodeId("id"), userController.updateUser);
 
-router.get("/users", decodeId("id"), userController.getAllUsers);
+router.get("/users", userController.getAllUsers);
 
 router.get("/perfil", verifyToken, (req, res) => {
   res.status(200).json({
