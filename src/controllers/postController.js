@@ -1,8 +1,40 @@
 const { AppDataSource } = require("../config/db");
 const Job = require("../entity/Job");
 const isPostOwner = require("../middlewares/postOwner")
+const { encode } = require("../utils/hashid");
+
 
 class PostController {
+
+_formatPostResponse(post) {
+    if (!post) return null;
+
+    const formattedUser = post.user
+      ? {
+          id: encode(post.user.id), 
+          name: post.user.name, 
+        }
+      : null;
+
+    return {
+      id: encode(post.id), 
+      title: post.title,
+      description: post.description,
+      value: post.value,
+      cep: post.cep,
+      street: post.street,
+      district: post.district,
+      city: post.city,
+      state: post.state,
+      number: post.number,
+      date: post.date,
+      phone: post.phone,
+      category: post.category,
+      payment: post.payment,
+      urgent: post.urgent,
+      user: formattedUser, 
+    };
+  }
 
   async createPost(req, res) {
     try {
@@ -125,9 +157,11 @@ if (userId && post.user && parseInt(post.user.id) === parseInt(userId)) {
   relations: ["user"]
 });
 
+  const postsResponse = posts.map(post => this._formatPostResponse(post));
+
       return res.status(200).json({
         success: true,
-        data: posts
+        data: postsResponse
       });
     } catch (error) {
       return res.status(500).json({
@@ -171,7 +205,7 @@ if (userId && post.user && parseInt(post.user.id) === parseInt(userId)) {
             return res.status(200).json({
                 success: true,
                 message: "Post atualizado com sucesso",
-                data: post
+                data: this._formatPostResponse(post)
             });
         } catch (error) {
             return res.status(500).json({
