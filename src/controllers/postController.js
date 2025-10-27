@@ -34,7 +34,7 @@ class PostController {
           payment,
           urgent,
           date,
-          user: { id: userId } // Associa ao usuário logado
+          user: { id: userId } 
       });
 
       await jobRepository.save(newPost);

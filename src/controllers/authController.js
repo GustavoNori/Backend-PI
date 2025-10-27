@@ -2,15 +2,17 @@ const { AppDataSource } = require("../config/db");
 const bcrypt = require("bcrypt");
 const { generateToken } = require("../middlewares/authJWT");
 const User = require("../entity/User");
+const { encode } = require("../utils/hashid");
 
 class userController {
   async createUser(req, res) {
     try {
-      const { firstName, lastName, email, cpf, phone, password, gender } = req.body;
+      const { firstName, lastName, email, cpf, phone, password, gender } =
+        req.body;
 
       if (!(email || cpf) || !password) {
         return res.status(400).json({
-           success: false,
+          success: false,
           message: "Campos obrigatórios não fornecidos",
         });
       }
@@ -48,8 +50,7 @@ class userController {
 
       await userRepository.save(newUser);
 
-     const token = generateToken(newUser);
-
+      const token = generateToken(newUser);
 
       return res.status(201).json({
         success: true,
@@ -62,7 +63,6 @@ class userController {
         success: false,
         message: "Erro interno no servidor",
         error: error.message,
-        
       });
     }
   }
@@ -118,7 +118,8 @@ class userController {
   }
   async updateUser(req, res) {
     const { id } = req.params;
-    const { firstName, lastName, email, cpf, phone, password, gender } = req.body;
+    const { firstName, lastName, email, cpf, phone, password, gender } =
+      req.body;
     try {
       const userRepository = AppDataSource.getRepository(User);
       const user = await userRepository.findOne({
@@ -143,10 +144,20 @@ class userController {
 
       await userRepository.save(user);
 
+      const userResponse = {
+        id: encode(user.id),
+        name: user.name,
+        email: user.email,
+        cpf: user.cpf,
+        phone: user.phone,
+        gender: user.gender,
+        profileImage: user.profileImage,
+      };
+
       return res.status(200).json({
         success: true,
         message: "Usuario atualizado com sucesso",
-        data: user,
+        data: userResponse,
       });
     } catch (error) {
       return res.status(500).json({
@@ -172,9 +183,19 @@ class userController {
         });
       }
 
+      const userResponse = {
+        id: encode(user.id),
+        name: user.name,
+        email: user.email,
+        cpf: user.cpf,
+        phone: user.phone,
+        gender: user.gender,
+        profileImage: user.profileImage,
+      };
+
       return res.status(200).json({
         success: true,
-        data: user,
+        data: userResponse,
       });
     } catch (error) {
       return res.status(500).json({
@@ -190,9 +211,21 @@ class userController {
 
       const users = await userRepository.find();
 
+      const usersResponse = users.map(user => {
+        return {
+          id: encode(user.id), 
+          name: user.name,
+          email: user.email,
+          cpf: user.cpf,
+          phone: user.phone,
+          gender: user.gender,
+          profileImage: user.profileImage,
+        };
+      });
+
       return res.status(200).json({
         success: true,
-        data: users,
+        data: usersResponse,
       });
     } catch (error) {
       return res.status(500).json({
