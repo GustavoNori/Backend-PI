@@ -11,3 +11,5 @@ const decode = (hash) => {
   const [decodedId] = hashids.decode(hash);
   return decodedId;
 };
+
+module.exports = { encode, decode };

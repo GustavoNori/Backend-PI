@@ -91,9 +91,11 @@ _formatPostResponse(post) {
       const jobRepository = AppDataSource.getRepository(Job);
       const posts = await jobRepository.find();
       
+
+const responsePosts = posts.map(post => this._formatPostResponse(post));
       return res.status(200).json({
         success: true,
-        data: posts
+        data: responsePosts
       });
     } catch (error) {
       return res.status(500).json({
