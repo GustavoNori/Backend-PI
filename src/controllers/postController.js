@@ -80,12 +80,18 @@ class PostController {
         user: { id: userId },
       });
 
+
       await jobRepository.save(newPost);
+
+      const postCompleto = await jobRepository.findOne({
+        where: { id: newPost.id },
+        relations: ["user"],
+      });
 
       return res.status(201).json({
         success: true,
         message: "Post criado com sucesso",
-        data: this._formatPostResponse(newPost),
+        data: this._formatPostResponse(postCompleto), 
       });
     } catch (error) {
       console.error("Erro ao criar post:", error);
