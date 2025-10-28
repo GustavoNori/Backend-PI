@@ -1,23 +1,20 @@
 const { AppDataSource } = require("../config/db");
 const Job = require("../entity/Job");
-const isPostOwner = require("../middlewares/postOwner")
-const { encode } = require("../utils/hashid");
-
+const { encode, decode } = require("../utils/hashid"); // <-- Correto
 
 class PostController {
-
-_formatPostResponse(post) {
+  _formatPostResponse(post) {
     if (!post) return null;
 
     const formattedUser = post.user
       ? {
-          id: encode(post.user.id), 
-          name: post.user.name, 
+          id: encode(post.user.id),
+          name: post.user.name,
         }
       : null;
 
     return {
-      id: encode(post.id), 
+      id: encode(post.id),
       title: post.title,
       description: post.description,
       value: post.value,
@@ -32,41 +29,55 @@ _formatPostResponse(post) {
       category: post.category,
       payment: post.payment,
       urgent: post.urgent,
-      user: formattedUser, 
+      user: formattedUser,
     };
   }
 
   async createPost(req, res) {
     try {
-      const { title, description, value, cep, street, district, city, state, number, date, phone, category, payment, urgent } = req.body;
+      const {
+        title,
+        description,
+        value,
+        cep,
+        street,
+        district,
+        city,
+        state,
+        number,
+        date,
+        phone,
+        category,
+        payment,
+        urgent,
+      } = req.body;
       const userId = req.user.id;
-      console.log('Dados recebidos:', { title, description, value, cep, street, district, city, state, number, date, phone, category, payment, urgent });
 
       if (!title || !description) {
         return res.status(400).json({
           success: false,
-          message: "Os campos titulo e descricao são obrigatórios"
+          message: "Os campos titulo e descricao são obrigatórios",
         });
       }
 
       const jobRepository = AppDataSource.getRepository(Job);
 
       const newPost = jobRepository.create({
-          title,
-          description,
-          value,
-          cep,
-          street,
-          district,
-          city,
-          state,
-          number,
-          phone,
-          category,
-          payment,
-          urgent,
-          date,
-          user: { id: userId } 
+        title,
+        description,
+        value,
+        cep,
+        street,
+        district,
+        city,
+        state,
+        number,
+        phone,
+        category,
+        payment,
+        urgent,
+        date,
+        user: { id: userId },
       });
 
       await jobRepository.save(newPost);
@@ -74,14 +85,14 @@ _formatPostResponse(post) {
       return res.status(201).json({
         success: true,
         message: "Post criado com sucesso",
-        data: newPost
+        data: this._formatPostResponse(newPost),
       });
     } catch (error) {
       console.error("Erro ao criar post:", error);
       return res.status(500).json({
         success: false,
         message: "Erro ao criar o post",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -89,19 +100,22 @@ _formatPostResponse(post) {
   async getAllPosts(req, res) {
     try {
       const jobRepository = AppDataSource.getRepository(Job);
-      const posts = await jobRepository.find();
-      
 
-const responsePosts = posts.map(post => this._formatPostResponse(post));
+      const posts = await jobRepository.find({
+        relations: ["user"],
+      });
+
+      const responsePosts = posts.map((post) => this._formatPostResponse(post));
+
       return res.status(200).json({
         success: true,
-        data: responsePosts
+        data: responsePosts,
       });
     } catch (error) {
       return res.status(500).json({
         success: false,
         message: "Erro ao buscar posts",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -110,41 +124,38 @@ const responsePosts = posts.map(post => this._formatPostResponse(post));
     try {
       const { id } = req.params;
       const jobRepository = AppDataSource.getRepository(Job);
+
+      const decodedId = decode(id);
+      if (!decodedId) {
+        return res.status(400).json({ success: false, message: "ID inválido" });
+      }
+
       const post = await jobRepository.findOne({
-      where: { id: id},
-      relations: ['user']
-    });
-      const userId = req.user?.id;  
-
-
-      let FromTheUser = false
-
-if (userId && post.user && parseInt(post.user.id) === parseInt(userId)) { 
-  FromTheUser = true;
-}
+        where: { id: decodedId },
+        relations: ["user"],
+      });
 
       if (!post) {
         return res.status(404).json({
           success: false,
-          message: "Post não encontrado"
+          message: "Post não encontrado",
         });
       }
 
-    console.log("--- DEBUG DE PERMISSÃO ---");
-    console.log("ID do Usuário Logado (userId):", userId);
-    console.log("ID do Dono do Post (post.user.id):", post.user?.id);
-    console.log("----------------------------");
+      const userId = req.user?.id;
+      const FromTheUser =
+        post.user && parseInt(post.user.id) === parseInt(userId);
 
       return res.status(200).json({
         success: true,
-        data: post,
-        FromTheUser
+        data: this._formatPostResponse(post),
+        FromTheUser,
       });
     } catch (error) {
       return res.status(500).json({
         success: false,
         message: "Erro ao buscar post",
-        error: error.message
+        error: error.message,
       });
     }
   }
@@ -152,95 +163,113 @@ if (userId && post.user && parseInt(post.user.id) === parseInt(userId)) {
   async getUserPosts(req, res) {
     try {
       const { userId } = req.params;
+      const decodedUserId = decode(userId);
+
+      if (!decodedUserId) {
+        return res
+          .status(400)
+          .json({ success: false, message: "ID de usuário inválido" });
+      }
+
       const jobRepository = AppDataSource.getRepository(Job);
 
       const posts = await jobRepository.find({
-  where: { user: { id: userId } },
-  relations: ["user"]
-});
+        where: { user: { id: decodedUserId } },
+        relations: ["user"],
+      });
 
-  const postsResponse = posts.map(post => this._formatPostResponse(post));
+      const postsResponse = posts.map((post) => this._formatPostResponse(post));
 
       return res.status(200).json({
         success: true,
-        data: postsResponse
+        data: postsResponse,
       });
     } catch (error) {
       return res.status(500).json({
         success: false,
         message: "Erro ao buscar posts do usuário",
-        error: error.message
+        error: error.message,
       });
     }
   }
 
-    async updatePost(req, res) {
-        try {
-            const { id } = req.params;
-            const userId = req.user.id;  
-            const body = req.body;
+  async updatePost(req, res) {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      const body = req.body;
 
-            const jobRepository = AppDataSource.getRepository(Job);
-            const post = await jobRepository.findOne({
-                where: { id: id },
-                relations: ["user"] 
-            });   
+      const jobRepository = AppDataSource.getRepository(Job);
 
-            if (!post) {
-                return res.status(44).json({
-                    success: false,
-                    message: "Post não encontrado"
-                });
-            }   
+      const decodedId = decode(id);
+      if (!decodedId) {
+        return res.status(400).json({ success: false, message: "ID inválido" });
+      }
 
-            if (post.user.id !== userId) {
-                return res.status(403).json({
-                    success: false,
-                    message: "Você não tem permissão para modificar este post"
-                });
-            }
+      const post = await jobRepository.findOne({
+        where: { id: decodedId },
+        relations: ["user"],
+      });
 
-            jobRepository.merge(post, body);
+      if (!post) {
+        return res.status(404).json({
+          success: false,
+          message: "Post não encontrado",
+        });
+      }
 
-            await jobRepository.save(post);
+      if (post.user.id !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: "Você não tem permissão para modificar este post",
+        });
+      }
 
-            return res.status(200).json({
-                success: true,
-                message: "Post atualizado com sucesso",
-                data: this._formatPostResponse(post)
-            });
-        } catch (error) {
-            return res.status(500).json({
-                success: false,
-                message: "Erro ao atualizar post",
-                error: error.message
-            });
-        }
+      jobRepository.merge(post, body);
+      await jobRepository.save(post);
+
+      return res.status(200).json({
+        success: true,
+        message: "Post atualizado com sucesso",
+        data: this._formatPostResponse(post),
+      });
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Erro ao atualizar post",
+        error: error.message,
+      });
     }
+  }
 
   async deletePost(req, res) {
     try {
       const { id } = req.params;
       const jobRepository = AppDataSource.getRepository(Job);
-      
-      const result = await jobRepository.delete(id);
-      
+
+      const decodedId = decode(id);
+      if (!decodedId) {
+        return res.status(400).json({ success: false, message: "ID inválido" });
+      }
+
+      const result = await jobRepository.delete(decodedId);
+
       if (result.affected === 0) {
         return res.status(404).json({
           success: false,
-          message: "Post não encontrado"
+          message: "Post não encontrado",
         });
       }
 
       return res.status(200).json({
         success: true,
-        message: "Post deletado com sucesso"
+        message: "Post deletado com sucesso",
       });
     } catch (error) {
       return res.status(500).json({
         success: false,
         message: "Erro ao deletar post",
-        error: error.message
+        error: error.message,
       });
     }
   }
