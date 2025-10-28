@@ -111,7 +111,7 @@ const responsePosts = posts.map(post => this._formatPostResponse(post));
       const { id } = req.params;
       const jobRepository = AppDataSource.getRepository(Job);
       const post = await jobRepository.findOne({
-      where: { id: parseInt(id) },
+      where: { id: id},
       relations: ['user']
     });
       const userId = req.user?.id;  
@@ -155,7 +155,7 @@ if (userId && post.user && parseInt(post.user.id) === parseInt(userId)) {
       const jobRepository = AppDataSource.getRepository(Job);
 
       const posts = await jobRepository.find({
-  where: { user: { id: parseInt(userId) } },
+  where: { user: { id: userId } },
   relations: ["user"]
 });
 
@@ -182,7 +182,7 @@ if (userId && post.user && parseInt(post.user.id) === parseInt(userId)) {
 
             const jobRepository = AppDataSource.getRepository(Job);
             const post = await jobRepository.findOne({
-                where: { id: parseInt(id) },
+                where: { id: id },
                 relations: ["user"] 
             });   
 
