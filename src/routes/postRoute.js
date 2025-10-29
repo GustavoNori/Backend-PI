@@ -9,10 +9,10 @@ const postController = new PostController();
 
 router.get('/', postController.getAllPosts.bind(postController));
 router.get('/user/:userId', decodeId("userId"), postController.getUserPosts.bind(postController));
-router.get('/:id', decodeId("id"), verifyToken, postController.getPostById.bind(postController));
+router.get('/:id', verifyToken, decodeId("id"), postController.getPostById.bind(postController));
 
 router.post('/', verifyToken, postController.createPost.bind(postController));
-router.put('/:id', decodeId("id"), verifyToken, isPostOwner, postController.updatePost.bind(postController));
-router.delete('/:id', decodeId("id"), verifyToken, isPostOwner, postController.deletePost.bind(postController));
+router.put('/:id', verifyToken, decodeId("id"), isPostOwner, postController.updatePost.bind(postController));  
+router.delete('/:id', verifyToken, decodeId("id"), isPostOwner, postController.deletePost.bind(postController));  
 
-module.exports = router;  
+module.exports = router;

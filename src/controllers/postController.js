@@ -1,6 +1,6 @@
 const { AppDataSource } = require("../config/db");
 const Job = require("../entity/Job");
-const { encode, decode } = require("../utils/hashid"); // <-- Correto
+const { encode, decode } = require("../utils/hashid");
 
 class PostController {
   _formatPostResponse(post) {
@@ -10,6 +10,7 @@ class PostController {
       ? {
           id: encode(post.user.id),
           name: post.user.name,
+          avatar: post.user.avatar || null,
         }
       : null;
 
@@ -80,7 +81,6 @@ class PostController {
         user: { id: userId },
       });
 
-
       await jobRepository.save(newPost);
 
       const postCompleto = await jobRepository.findOne({
@@ -88,10 +88,12 @@ class PostController {
         relations: ["user"],
       });
 
+      const formattedPost = this._formatPostResponse(postCompleto);
+
       return res.status(201).json({
         success: true,
         message: "Post criado com sucesso",
-        data: this._formatPostResponse(postCompleto), 
+        data: formattedPost,
       });
     } catch (error) {
       console.error("Erro ao criar post:", error);
@@ -128,18 +130,24 @@ class PostController {
 
   async getPostById(req, res) {
     try {
+      console.log('=== GET POST BY ID - CONTROLLER ===');
+      console.log('req.params:', req.params);
+      console.log('req.user:', req.user);
+      
       const { id } = req.params;
+      console.log('ID from params:', id, 'Type:', typeof id);
+      
       const jobRepository = AppDataSource.getRepository(Job);
 
-      const decodedId = decode(id);
-      if (!decodedId) {
-        return res.status(400).json({ success: false, message: "ID inválido" });
-      }
-
+      // O ID já foi decodificado pelo middleware, não precisa decodificar novamente
+      console.log('Buscando post com ID:', id);
+      
       const post = await jobRepository.findOne({
-        where: { id: decodedId },
+        where: { id: id },
         relations: ["user"],
       });
+
+      console.log('Post encontrado:', post ? 'SIM' : 'NÃO');
 
       if (!post) {
         return res.status(404).json({
@@ -149,8 +157,11 @@ class PostController {
       }
 
       const userId = req.user?.id;
-      const FromTheUser =
-        post.user && parseInt(post.user.id) === parseInt(userId);
+      const FromTheUser = post.user && parseInt(post.user.id) === parseInt(userId);
+
+      console.log('User ID:', userId);
+      console.log('Post User ID:', post.user?.id);
+      console.log('Is owner:', FromTheUser);
 
       return res.status(200).json({
         success: true,
@@ -158,6 +169,7 @@ class PostController {
         FromTheUser,
       });
     } catch (error) {
+      console.error('ERROR no getPostById:', error);
       return res.status(500).json({
         success: false,
         message: "Erro ao buscar post",
@@ -169,18 +181,15 @@ class PostController {
   async getUserPosts(req, res) {
     try {
       const { userId } = req.params;
-      const decodedUserId = decode(userId);
+      
+      console.log('=== GET USER POSTS ===');
+      console.log('User ID from params:', userId);
 
-      if (!decodedUserId) {
-        return res
-          .status(400)
-          .json({ success: false, message: "ID de usuário inválido" });
-      }
-
+      // O userId já foi decodificado pelo middleware
       const jobRepository = AppDataSource.getRepository(Job);
 
       const posts = await jobRepository.find({
-        where: { user: { id: decodedUserId } },
+        where: { user: { id: userId } },
         relations: ["user"],
       });
 
@@ -191,6 +200,7 @@ class PostController {
         data: postsResponse,
       });
     } catch (error) {
+      console.error('ERROR no getUserPosts:', error);
       return res.status(500).json({
         success: false,
         message: "Erro ao buscar posts do usuário",
@@ -205,15 +215,15 @@ class PostController {
       const userId = req.user.id;
       const body = req.body;
 
+      console.log('=== UPDATE POST ===');
+      console.log('Post ID:', id);
+      console.log('User ID:', userId);
+      
+      // O ID já foi decodificado pelo middleware
       const jobRepository = AppDataSource.getRepository(Job);
 
-      const decodedId = decode(id);
-      if (!decodedId) {
-        return res.status(400).json({ success: false, message: "ID inválido" });
-      }
-
       const post = await jobRepository.findOne({
-        where: { id: decodedId },
+        where: { id: id },
         relations: ["user"],
       });
 
@@ -240,6 +250,7 @@ class PostController {
         data: this._formatPostResponse(post),
       });
     } catch (error) {
+      console.error('ERROR no updatePost:', error);
       return res.status(500).json({
         success: false,
         message: "Erro ao atualizar post",
@@ -251,14 +262,14 @@ class PostController {
   async deletePost(req, res) {
     try {
       const { id } = req.params;
+      
+      console.log('=== DELETE POST ===');
+      console.log('Post ID:', id);
+      
+      // O ID já foi decodificado pelo middleware
       const jobRepository = AppDataSource.getRepository(Job);
 
-      const decodedId = decode(id);
-      if (!decodedId) {
-        return res.status(400).json({ success: false, message: "ID inválido" });
-      }
-
-      const result = await jobRepository.delete(decodedId);
+      const result = await jobRepository.delete(id);
 
       if (result.affected === 0) {
         return res.status(404).json({
@@ -272,6 +283,7 @@ class PostController {
         message: "Post deletado com sucesso",
       });
     } catch (error) {
+      console.error('ERROR no deletePost:', error);
       return res.status(500).json({
         success: false,
         message: "Erro ao deletar post",
