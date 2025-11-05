@@ -6,7 +6,7 @@ const { verifyToken } = require('../middlewares/authJWT');
 
 const ratingController = new RatingController()
 
-router.get('/users/:userId/average', ratingController.getAverageUserRating.bind(ratingController))
+ router.get('/average/:userId', ratingController.getAverageUserRating.bind(ratingController))
 
 router.post("/", verifyToken, ratingController.createRating.bind(ratingController))
 
