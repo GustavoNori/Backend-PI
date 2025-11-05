@@ -52,12 +52,13 @@ class PostController {
         payment,
         urgent,
       } = req.body;
+
       const userId = req.user.id;
 
       if (!title || !description) {
         return res.status(400).json({
           success: false,
-          message: "Os campos titulo e descricao são obrigatórios",
+          message: "Os campos título e descrição são obrigatórios",
         });
       }
 
@@ -83,17 +84,15 @@ class PostController {
 
       await jobRepository.save(newPost);
 
-      const postCompleto = await jobRepository.findOne({
+      const savedPost = await jobRepository.findOne({
         where: { id: newPost.id },
         relations: ["user"],
       });
 
-      const formattedPost = this._formatPostResponse(postCompleto);
-
       return res.status(201).json({
         success: true,
         message: "Post criado com sucesso",
-        data: formattedPost,
+        data: this._formatPostResponse(savedPost),
       });
     } catch (error) {
       console.error("Erro ao criar post:", error);
@@ -108,12 +107,9 @@ class PostController {
   async getAllPosts(req, res) {
     try {
       const jobRepository = AppDataSource.getRepository(Job);
-
       const posts = await jobRepository.find({
         relations: ["user"],
-        order: {
-          id: "DESC",
-        },
+        order: { id: "DESC" },
       });
 
       const responsePosts = posts.map((post) => this._formatPostResponse(post));
@@ -133,23 +129,15 @@ class PostController {
 
   async getPostById(req, res) {
     try {
-      console.log("=== GET POST BY ID - CONTROLLER ===");
-      console.log("req.params:", req.params);
-      console.log("req.user:", req.user);
-
       const { id } = req.params;
-      console.log("ID from params:", id, "Type:", typeof id);
-
       const jobRepository = AppDataSource.getRepository(Job);
 
-      console.log("Buscando post com ID:", id);
+      const decodedId = isNaN(id) ? decode(id) : id;
 
       const post = await jobRepository.findOne({
-        where: { id: id },
+        where: { id: decodedId },
         relations: ["user"],
       });
-
-      console.log("Post encontrado:", post ? "SIM" : "NÃO");
 
       if (!post) {
         return res.status(404).json({
@@ -159,20 +147,15 @@ class PostController {
       }
 
       const userId = req.user?.id;
-      const FromTheUser =
-        post.user && parseInt(post.user.id) === parseInt(userId);
-
-      console.log("User ID:", userId);
-      console.log("Post User ID:", post.user?.id);
-      console.log("Is owner:", FromTheUser);
+      const isOwner = post.user && parseInt(post.user.id) === parseInt(userId);
 
       return res.status(200).json({
         success: true,
         data: this._formatPostResponse(post),
-        FromTheUser,
+        isOwner,
       });
     } catch (error) {
-      console.error("ERROR no getPostById:", error);
+      console.error("Erro no getPostById:", error);
       return res.status(500).json({
         success: false,
         message: "Erro ao buscar post",
@@ -184,26 +167,22 @@ class PostController {
   async getUserPosts(req, res) {
     try {
       const { userId } = req.params;
+      const decodedId = isNaN(userId) ? decode(userId) : userId;
 
-      console.log("=== GET USER POSTS ===");
-      console.log("User ID from params:", userId);
-
-      // O userId já foi decodificado pelo middleware
       const jobRepository = AppDataSource.getRepository(Job);
-
       const posts = await jobRepository.find({
-        where: { user: { id: userId } },
+        where: { user: { id: decodedId } },
         relations: ["user"],
       });
 
-      const postsResponse = posts.map((post) => this._formatPostResponse(post));
+      const formatted = posts.map((p) => this._formatPostResponse(p));
 
       return res.status(200).json({
         success: true,
-        data: postsResponse,
+        data: formatted,
       });
     } catch (error) {
-      console.error("ERROR no getUserPosts:", error);
+      console.error("Erro no getUserPosts:", error);
       return res.status(500).json({
         success: false,
         message: "Erro ao buscar posts do usuário",
@@ -216,12 +195,12 @@ class PostController {
     try {
       const { id } = req.params;
       const userId = req.user.id;
-      const body = req.body;
-
       const jobRepository = AppDataSource.getRepository(Job);
 
+      const decodedId = isNaN(id) ? decode(id) : id;
+
       const post = await jobRepository.findOne({
-        where: { id: id },
+        where: { id: decodedId },
         relations: ["user"],
       });
 
@@ -239,7 +218,7 @@ class PostController {
         });
       }
 
-      jobRepository.merge(post, body);
+      jobRepository.merge(post, req.body);
       await jobRepository.save(post);
 
       return res.status(200).json({
@@ -248,7 +227,7 @@ class PostController {
         data: this._formatPostResponse(post),
       });
     } catch (error) {
-      console.error("ERROR no updatePost:", error);
+      console.error("Erro no updatePost:", error);
       return res.status(500).json({
         success: false,
         message: "Erro ao atualizar post",
@@ -260,24 +239,38 @@ class PostController {
   async deletePost(req, res) {
     try {
       const { id } = req.params;
-
+      const userId = req.user.id;
       const jobRepository = AppDataSource.getRepository(Job);
 
-      const result = await jobRepository.delete(id);
+      const decodedId = isNaN(id) ? decode(id) : id;
 
-      if (result.affected === 0) {
+      const post = await jobRepository.findOne({
+        where: { id: decodedId },
+        relations: ["user"],
+      });
+
+      if (!post) {
         return res.status(404).json({
           success: false,
           message: "Post não encontrado",
         });
       }
 
+      if (post.user.id !== userId) {
+        return res.status(403).json({
+          success: false,
+          message: "Você não tem permissão para excluir este post",
+        });
+      }
+
+      await jobRepository.delete(decodedId);
+
       return res.status(200).json({
         success: true,
         message: "Post deletado com sucesso",
       });
     } catch (error) {
-      console.error("ERROR no deletePost:", error);
+      console.error("Erro no deletePost:", error);
       return res.status(500).json({
         success: false,
         message: "Erro ao deletar post",
