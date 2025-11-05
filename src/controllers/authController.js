@@ -4,10 +4,11 @@ const { generateToken } = require("../middlewares/authJWT");
 const User = require("../entity/User");
 const { encode } = require("../utils/hashid");
 
-class UserController {
+class userController {
   async createUser(req, res) {
     try {
-      const { firstName, lastName, email, cpf, phone, password, gender } = req.body;
+      const { firstName, lastName, email, cpf, phone, password, gender } =
+        req.body;
 
       if (!(email || cpf) || !password) {
         return res.status(400).json({
@@ -17,8 +18,8 @@ class UserController {
       }
 
       const userRepository = AppDataSource.getRepository(User);
-      const existingUser = await userRepository.findOneBy({ email });
 
+      const existingUser = await userRepository.findOneBy({ email });
       if (existingUser) {
         return res.status(409).json({
           success: false,
@@ -28,7 +29,14 @@ class UserController {
 
       const completeName = `${firstName} ${lastName}`;
       const senhaCriptografada = await bcrypt.hash(password, 10);
-      const profileImage = req.file ? req.file.filename : null;
+
+      let profileImage;
+
+      if (req.file) {
+        profileImage = req.file.filename;
+      } else {
+        profileImage = null;
+      }
 
       const newUser = userRepository.create({
         name: completeName,
@@ -41,22 +49,20 @@ class UserController {
       });
 
       await userRepository.save(newUser);
-      const token = generateToken(newUser);
 
-      // Remove a senha antes de retornar
-      const { password: _, ...userParaRetorno } = newUser;
+      const token = generateToken(newUser);
 
       return res.status(201).json({
         success: true,
         message: "Usuário cadastrado com sucesso!",
         token,
-        user: { ...userParaRetorno, id: encode(newUser.id) },
+        user: newUser,
       });
     } catch (error) {
-      console.error("Erro em createUser:", error);
       res.status(500).json({
         success: false,
-        message: "Erro interno no servidor ao criar usuário",
+        message: "Erro interno no servidor",
+        error: error.message,
       });
     }
   }
@@ -64,6 +70,7 @@ class UserController {
   async loginUser(req, res) {
     try {
       const { identificator, password } = req.body;
+
       if (!identificator || !password) {
         return res.status(400).json({
           success: false,
@@ -71,7 +78,7 @@ class UserController {
         });
       }
 
-      const userRepository = AppDataSource.getRepository(User);
+      const userRepository = AppDataSource.getRepository("User");
       let user;
 
       if (identificator.includes("@")) {
@@ -79,7 +86,6 @@ class UserController {
       } else {
         user = await userRepository.findOneBy({ cpf: identificator });
       }
-
       if (!user) {
         return res.status(400).json({
           success: false,
@@ -96,63 +102,67 @@ class UserController {
       }
 
       const token = generateToken(user);
-      return res.status(200).json({
+
+      res.status(200).json({
         success: true,
         message: "Login bem-sucedido!",
         token,
       });
     } catch (error) {
-      console.error("Erro em loginUser:", error);
       res.status(500).json({
         success: false,
-        message: "Erro interno no servidor durante o login",
+        message: "Erro interno no servidor",
+        error: error.message,
       });
     }
   }
-
   async updateUser(req, res) {
     const { id } = req.params;
-    const { firstName, lastName, email, cpf, phone, gender } = req.body;
-
+    const { firstName, lastName, email, cpf, phone, password, gender } =
+      req.body;
     try {
       const userRepository = AppDataSource.getRepository(User);
-      const user = await userRepository.findOne({ where: { id: parseInt(id) } });
-
+      const user = await userRepository.findOne({
+        where: { id: parseInt(id) },
+      });
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: "Usuário não encontrado",
+          message: "Usuario não encontrado",
         });
       }
+      if (firstName) user.name = firstName;
+      if (lastName) user.surname = lastName;
+      if (email) user.email = email;
+      if (cpf) user.cpf = cpf;
+      if (phone) user.number = phone;
+      if (gender) user.gender = gender;
 
-      if (firstName !== undefined) user.name = firstName;
-      if (lastName !== undefined) user.surname = lastName;
-      if (email !== undefined) user.email = email;
-      if (cpf !== undefined) user.cpf = cpf;
-      if (phone !== undefined) user.phone = phone;
-      if (gender !== undefined) user.gender = gender;
-      if (req.file) user.profileImage = req.file.filename;
+      if (req.file) {
+        user.profileImage = req.file.filename;
+      }
 
       await userRepository.save(user);
 
-      const { password: _, ...userParaRetorno } = user;
+      const userResponse = {
+        id: encode(user.id),
+        name: user.name,
+        email: user.email,
+        cpf: user.cpf,
+        phone: user.phone,
+        gender: user.gender,
+        profileImage: user.profileImage,
+      };
 
       return res.status(200).json({
         success: true,
-        message: "Usuário atualizado com sucesso",
-        data: { ...userParaRetorno, id: encode(user.id) },
+        message: "Usuario atualizado com sucesso",
+        data: userResponse,
       });
     } catch (error) {
-      console.error("Erro em updateUser:", error);
-      if (error.code === "ER_DUP_ENTRY" || error.message.includes("unique constraint")) {
-        return res.status(409).json({
-          success: false,
-          message: "Email ou CPF já está em uso por outro usuário.",
-        });
-      }
       return res.status(500).json({
         success: false,
-        message: "Erro interno ao atualizar usuário",
+        message: error.message,
       });
     }
   }
@@ -161,25 +171,36 @@ class UserController {
     try {
       const { id } = req.params;
       const userRepository = AppDataSource.getRepository(User);
-      const user = await userRepository.findOne({ where: { id: parseInt(id) } });
+
+      const user = await userRepository.findOne({
+        where: { id: parseInt(id) },
+      });
 
       if (!user) {
         return res.status(404).json({
           success: false,
-          message: "Usuário não encontrado",
+          message: "Usuario não encontrado",
         });
       }
 
-      const { password, ...userSemSenha } = user;
+      const userResponse = {
+        id: encode(user.id),
+        name: user.name,
+        email: user.email,
+        cpf: user.cpf,
+        phone: user.phone,
+        gender: user.gender,
+        profileImage: user.profileImage,
+      };
+
       return res.status(200).json({
         success: true,
-        data: { ...userSemSenha, id: encode(user.id) },
+        data: userResponse,
       });
     } catch (error) {
-      console.error("Erro em getUserById:", error);
       return res.status(500).json({
         success: false,
-        message: "Erro ao buscar usuário",
+        message: error.message,
       });
     }
   }
@@ -187,24 +208,32 @@ class UserController {
   async getAllUsers(req, res) {
     try {
       const userRepository = AppDataSource.getRepository(User);
+
       const users = await userRepository.find();
-      const usersSemSenha = users.map(({ password, ...u }) => ({
-        ...u,
-        id: encode(u.id),
-      }));
+
+      const usersResponse = users.map(user => {
+        return {
+          id: encode(user.id), 
+          name: user.name,
+          email: user.email,
+          cpf: user.cpf,
+          phone: user.phone,
+          gender: user.gender,
+          profileImage: user.profileImage,
+        };
+      });
 
       return res.status(200).json({
         success: true,
-        data: usersSemSenha,
+        data: usersResponse,
       });
     } catch (error) {
-      console.error("Erro em getAllUsers:", error);
       return res.status(500).json({
         success: false,
-        message: "Erro ao buscar usuários",
+        message: error.message,
       });
     }
   }
 }
 
-module.exports = new UserController();
+module.exports = new userController();
