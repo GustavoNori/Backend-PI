@@ -24,8 +24,14 @@ module.exports = new EntitySchema({
     },
     urgent: { type: "boolean", default: false },
 
-    created_at: { type: "datetime", default: () => "CURRENT_TIMESTAMP" },
-    updated_at: { type: "datetime", default: () => "CURRENT_TIMESTAMP", onUpdate: "CURRENT_TIMESTAMP" },
+created_at: {
+  type: "datetime",
+  createDate: true,
+},
+updated_at: {
+  type: "datetime",
+  updateDate: true,
+},
   },
   relations: {
     user: {

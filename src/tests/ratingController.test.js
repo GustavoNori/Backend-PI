@@ -44,9 +44,12 @@ describe("Testes do RatingController (/api/rating)", () => {
     const userRepo = AppDataSource.getRepository(User);
     const jobRepo = AppDataSource.getRepository(Job);
 
-    await ratingRepo.delete({});
-    await jobRepo.delete({});
-    await userRepo.delete({});
+    // Desativa FK para limpar tabelas
+    await AppDataSource.query("SET FOREIGN_KEY_CHECKS = 0;");
+    await ratingRepo.clear();
+    await jobRepo.clear();
+    await userRepo.clear();
+    await AppDataSource.query("SET FOREIGN_KEY_CHECKS = 1;");
   });
 
   // --- TESTES DE CRIAÇÃO ---
@@ -135,11 +138,10 @@ describe("Testes do RatingController (/api/rating)", () => {
       expect(response.body.averageRating).toBe(0);
     });
 
-    it("Deve retornar erro 400 se não for passado userId", async () => {
+    it("Deve retornar erro 400/404 se não for passado userId", async () => {
       const response = await request(app)
         .get("/api/rating/average/");
 
-      // O Express normalmente retorna 404 nesse caso, mas se o controller for chamado diretamente:
       expect([400, 404]).toContain(response.status);
     });
   });

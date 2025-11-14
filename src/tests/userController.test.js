@@ -42,22 +42,26 @@ describe('Testes Essenciais do UserController (/api/auth)', () => {
     await AppDataSource.destroy();
   });
 
-  // Limpa TODAS as tabelas relevantes antes de CADA teste
-  beforeEach(async () => {
-    const userRepository = AppDataSource.getRepository(User);
-    const jobRepository = AppDataSource.getRepository(Job);
-    const applicationRepository = AppDataSource.getRepository(Application);
-    const avaliacaoRepository = AppDataSource.getRepository(Avaliacao);
-    try {
-      // Limpa na ordem correta (dependentes primeiro)
-      await applicationRepository.delete({});
-      await avaliacaoRepository.delete({});
-      await jobRepository.delete({});
-      await userRepository.delete({});
-    } catch (err) {
-      console.error(`!!! ERRO ao limpar tabelas (userController beforeEach) !!!:`, err.message);
-    }
-  });
+beforeEach(async () => {
+  try {
+    // Desativa temporariamente as FKs
+    await AppDataSource.query('SET FOREIGN_KEY_CHECKS=0;');
+
+    // Limpa todas as tabelas na ordem correta
+    await AppDataSource.query('DELETE FROM applications;');
+    await AppDataSource.query('DELETE FROM avaliacoes;'); // <--- aqui
+    await AppDataSource.query('DELETE FROM jobs;');
+    await AppDataSource.query('DELETE FROM users;');
+
+    // Reativa as FKs
+    await AppDataSource.query('SET FOREIGN_KEY_CHECKS=1;');
+  } catch (err) {
+    console.error(`!!! ERRO ao limpar tabelas (userController beforeEach) !!!:`, err.message);
+  }
+});
+
+
+
 
   // --- Testes de Registro ---
   describe('Registro (POST /api/auth/register)', () => {

@@ -15,11 +15,12 @@ const decodeId = (paramName = 'id') => {
 
     const id = decode(hashedId);
     console.log('Decoded ID:', id);
-
-    if (id === undefined) {
-      console.log('ERROR: Resource not found - decode returned undefined');
-      return res.status(404).json({ error: 'Resource not found.' });
-    }
+    
+if (id === undefined) {
+  console.log('ERROR: Invalid ID');
+  req.params[paramName] = null; // 
+  return next();
+}
 
     req.params[paramName] = id;
     console.log('ID successfully decoded and set');

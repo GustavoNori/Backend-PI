@@ -19,14 +19,17 @@ describe("Testes do SearchController (/api/search)", () => {
 
   beforeEach(async () => {
     const jobRepository = AppDataSource.getRepository(Job);
-    await jobRepository.delete({});
+
+    // Desativa FK se houver
+    await AppDataSource.query("SET FOREIGN_KEY_CHECKS = 0;");
+    await jobRepository.clear();
+    await AppDataSource.query("SET FOREIGN_KEY_CHECKS = 1;");
   });
 
   // --- TESTE 1: Buscar com resultados ---
   it("Deve retornar posts da categoria informada (200)", async () => {
     const jobRepository = AppDataSource.getRepository(Job);
 
-    // Cria dois jobs de categorias diferentes
     const job1 = jobRepository.create({
       title: "Pedreiro urgente",
       description: "Reforma rápida",
@@ -43,12 +46,12 @@ describe("Testes do SearchController (/api/search)", () => {
 
     await jobRepository.save([job1, job2]);
 
-    // Busca categoria "Construção"
     const response = await request(app).get("/api/search/Construção");
 
     expect(response.status).toBe(200);
     expect(response.body.success).toBe(true);
     expect(Array.isArray(response.body.data)).toBe(true);
+    expect(response.body.data.length).toBeGreaterThanOrEqual(1);
     expect(response.body.data[0].category).toBe("Construção");
   });
 
