@@ -4,15 +4,15 @@ require('dotenv').config();
 require('reflect-metadata');
 const { DataSource } = require('typeorm');
 
-// Criação da instância de conexão com o banco usando variáveis de ambiente
+
 const AppDataSource = new DataSource({
   type: 'mysql',
-  host: process.env.DB_HOST,     // exemplo: localhost
+  host: process.env.DB_HOST,    
   port: 3306,
-  username: process.env.DB_USER, // exemplo: root
+  username: process.env.DB_USER, 
   password: process.env.DB_PASS,
   database: process.env.DB_NAME,
-  synchronize: true, // cria tabelas automaticamente com base nas entidades
+  synchronize: true,
   logging: false,
   entities: [
     path.join(dirname, '../entity/User.js'),

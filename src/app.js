@@ -16,4 +16,4 @@
     app.use("/api/rating", require("./routes/ratingRoute"));
     app.use("/api/search", require("./routes/searchRoute"))
 
-    module.exports = app; // exporta apenas o app, sem iniciar o servidor
+    module.exports = app; 
